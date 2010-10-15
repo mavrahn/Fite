@@ -1,5 +1,3 @@
-local class = select(2, UnitClass('player'))
-
 local M = LibStub:GetLibrary("LibSharedMedia-3.0")
 Fite = LibStub("AceAddon-3.0"):NewAddon("Fite", "AceConsole-3.0", "AceEvent-3.0")
 Fite.M = M
@@ -16,6 +14,13 @@ Fite.settings = {
 
 -- Startup
 function Fite:OnInitialize()
+end
+
+function Fite:OnEnable()
+	Fite.class = Fite.classes[select(2, UnitClass('player'))]
+	if not Fite.class then
+		Fite.class = Fite.classes.NULL
+	end
     Fite.currentForm = GetShapeshiftForm()
 
     Fite:MakeFrame()
@@ -38,7 +43,10 @@ function Fite:Rebuild()
     Fite:LayoutIcons()
     Fite:UpdateIcons()
 
-    Fite:BuildSecondaryResourceBar()
+	if Fite.powerBar then
+		Fite.powerBar:Destroy()
+	end
+	Fite.powerBar = Fite.class:GetPowerBar()
 
     Fite:Resize()
     Fite:Update()
@@ -59,42 +67,19 @@ function Fite:UNIT_SPELLCAST_SUCCEEDED(event, target, spell)
 end
 
 function Fite:PLAYER_TARGET_CHANGED()
-	if Fite.secondaryResourceBar then
-		Fite.secondaryResourceBar:Update()
+	if Fite.powerBar then
+		Fite.powerBar:Update()
 	end
 end
 
 function Fite:UNIT_COMBO_POINTS()
-    if Fite.secondaryResourceBar then
-        Fite.secondaryResourceBar:Update()
+    if Fite.powerBar then
+        Fite.powerBar:Update()
     end    
 end
 
 function Fite:ACTIONBAR_UPDATE_COOLDOWN()
     Fite:UpdateIcons()
-end
-
-function Fite:BuildSecondaryResourceBar()
-    if Fite.secondaryResourceBar then
-        Fite.secondaryResourceBar:Destroy()
-    end
-    Fite.secondaryResourceBar = nil
-
-    if class == 'DRUID' then
-    	if Fite.currentForm == 3 then
-	        Fite.secondaryResourceBar = FiteComboBar:New(Fite.frame)
-	    elseif Fite.currentForm == 5 then
-    		Fite.secondaryResourceBar = FitePowerBar:New(Fite.frame, EclipseBarFrame, 0.9)
-    	end
-    elseif class == 'ROGUE' then
-    	Fite.secondaryResourceBar = FiteComboBar:New(Fite.frame)
-    elseif class == 'PALADIN' then
-    	Fite.secondaryResourceBar = FitePowerBar:New(Fite.frame, PaladinPowerBar, 0.9)
-    elseif class == 'DEATHKNIGHT' then
-    	Fite.secondaryResourceBar = FitePowerBar:New(Fite.frame, RuneFrame, 1.0)
-    elseif class == 'WARLOCK' then
-    	Fite.secondaryResourceBar = FitePowerBar:New(Fite.frame, ShardBarFrame, 1.0)
-    end
 end
 
 function Fite:Resize()
@@ -116,12 +101,12 @@ function Fite:Resize()
                                         "TOP", 0, 0 - (iconHeight + Fite.settings.edgeSize))
     end
    
-    if Fite.secondaryResourceBar then
-        Fite.height = Fite.height + Fite.secondaryResourceBar.height
-        --Fite.secondaryResourceBar:SetWidth(Fite.width)
-        --Fite.secondaryResourceBar:SetHeight(Fite.secondaryResourceBar.height)
+    if Fite.powerBar then
+        Fite.height = Fite.height + Fite.powerBar.height
+        --Fite.powerBar:SetWidth(Fite.width)
+        --Fite.powerBar:SetHeight(Fite.powerBar.height)
         
-        Fite.secondaryResourceBar.frame:SetPoint("BOTTOM", Fite.frame, "BOTTOM", 0, Fite.settings.edgeSize)
+        Fite.powerBar.frame:SetPoint("BOTTOM", Fite.frame, "BOTTOM", 0, Fite.settings.edgeSize)
     end
     
     Fite.frame:SetHeight(Fite.height)
@@ -136,8 +121,8 @@ function Fite:MakeFrame()
     Fite.frame = CreateFrame("Frame", "FiteFrame", UIParent)
 
     Fite:BuildIconBar()
-    Fite.resourceBar = FiteResourceBar:New(Fite.frame)    
-    Fite:BuildSecondaryResourceBar()
+    Fite.resourceBar = FiteResourceBar:New(Fite.frame)
+	Fite.powerBar = Fite.class:GetPowerBar(Fite.frame)
     Fite:Resize()
 
     Fite.frameUnlocked = true
@@ -151,49 +136,31 @@ function Fite:MakeFrame()
                             edgeSize=16})
     self.frame:SetBackdropColor(0, 0, 0, .5)    
 
-    Fite.frame:RegisterForDrag("LeftButton")
-    Fite.frame:ClearAllPoints()
+    self.frame:RegisterForDrag("LeftButton")
+    self.frame:ClearAllPoints()
 
     local parentHeight = UIParent:GetHeight()
-    Fite.frame:SetPoint("CENTER", "UIParent", "CENTER", 0, 0 - (parentHeight / 4))
+    self.frame:SetPoint("CENTER", "UIParent", "CENTER", 0, 0 - (parentHeight / 4))
 
-    Fite.frame:SetScript("OnDragStart", function() Fite.frame:StartMoving() end)
-    Fite.frame:SetScript("OnDragStop", function() Fite.frame:StopMovingOrSizing() end)
+    self.frame:SetScript("OnDragStart", function() Fite.frame:StartMoving() end)
+    self.frame:SetScript("OnDragStop", function() Fite.frame:StopMovingOrSizing() end)
 
-    Fite.frame:EnableMouse(true)
-    Fite.frame:SetMovable(true)
-    Fite.frame:EnableMouse(true)
+    self.frame:EnableMouse(true)
+    self.frame:SetMovable(true)
+    self.frame:EnableMouse(true)
 
-    Fite:LayoutIcons()
-    Fite:UpdateIcons()
+    self:LayoutIcons()
+    self:UpdateIcons()
     
-    Fite.frame:Show()
+    self.frame:Show()
 
-    Fite.frame:SetScript("OnUpdate", function(self, elapsed) Fite:MaybeUpdate(elapsed) end)
-end
-
-function Fite:ChooseSpells()
-	if class == "DRUID" then
-		return Fite.spells.Druid[GetShapeshiftForm()]
-	elseif class == "WARLOCK" then
-		return Fite.spells.Warlock.Affliction
-	elseif class == "PALADIN" then
-		return Fite.spells.Paladin[GetPrimaryTalentTree()]
-	elseif class == "DEATHKNIGHT" then
-		return Fite.spells.DeathKnight
-	else
-		return {}
-	end
+    self.frame:SetScript("OnUpdate", function(self, elapsed) Fite:MaybeUpdate(elapsed) end)
 end
 
 function Fite:BuildIconBar()
 	Fite:DestroyIcons()
-
 	Fite.classSpells = {}
-	
-	local spells = Fite:ChooseSpells()
-	
-	table.foreach(spells,
+	table.foreach(Fite.class:GetSpells(),
 			function(i, spell)
 				-- XXX - this is the best way I can find to detect spells-I-don't-know.
 			  	local start, duration, enabled = GetSpellCooldown(spell.name)
@@ -278,4 +245,25 @@ end
 function Fite:MaybeUpdate(elapsed)
 	Fite:MaybeUpdateIcons(elapsed)
 	Fite:MaybeUpdateResources(elapsed)
+end
+
+-- Frame Cache
+Fite.unusedFrames = {}
+function Fite:GetFrame(parent)
+    local frame = nil
+    if #Fite.unusedFrames > 0 then
+        frame = Fite.unusedFrames[#Fite.unusedFrames]
+        table.remove(FitePowerBar.unusedFrames)
+        frame:Show()
+        frame:SetParent(parent)
+    else
+        frame = CreateFrame("Frame", nil, parentFrame)
+    end
+    return frame
+end
+
+function Fite:ReleaseFrame(frame)
+    frame:Hide()
+	frame:SetParent(UIParent)    
+    table.insert(Fite.unusedFrames, frame)
 end

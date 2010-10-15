@@ -1,30 +1,6 @@
 
 FitePowerBar = {}
 
-FitePowerBar.unusedFrames = {}
-FitePowerBar.frameNum = 0
-
-function FitePowerBar:GetFrame(parentFrame)
-    local frame = nil
-    if #FitePowerBar.unusedFrames > 0 and false then
-        frame = FitePowerBar.unusedFrames[#FitePowerBar.unusedFrames]
-        table.remove(FitePowerBar.unusedFrames)
-        frame:Show()
-    else
-        FitePowerBar.frameNum = FitePowerBar.frameNum + 1
-        frame = CreateFrame("Frame", "fitecombo" .. FitePowerBar.frameNum, parentFrame)
-        frame:SetWidth(140)
-        frame:SetHeight(32)
-    end
-    return frame
-end
-
-function FitePowerBar:ReleaseFrame(frame)
-    frame:Hide()
-    
-    table.insert(FitePowerBar.unusedFrames, frame)
-end
-
 function FitePowerBar:New(parentFrame, realFrame, scale)
    o = {}
    o.parentFrame = parentFrame
@@ -36,6 +12,9 @@ end
 
 function FitePowerBar:Init(realFrame, scale)
 	self.frame = FitePowerBar:GetFrame(self.parentFrame)
+	self.frame:SetWidth(140)
+    self.frame:SetHeight(32)
+	
    	self.frame.unit = 'player'
    	self.realFrame = realFrame
    	self.realParent = realFrame:GetParent()
@@ -63,7 +42,7 @@ function FitePowerBar:Destroy()
 		self.realFrame:ClearAllPoints()
 		self.realFrame:SetPoint(point[1], point[2], point[3], point[4], point[5])		
 	end
-	FitePowerBar:ReleaseFrame(self.frame)
+	Fite:ReleaseFrame(self.frame)
     self.frame = nil
 end
 

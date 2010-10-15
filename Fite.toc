@@ -8,8 +8,8 @@
 embeds.xml
 
 Fite.lua
-Spells.lua
-FiteIcon.lua
+Classes.lua
 ResourceBar.lua
+FiteIcon.lua
 ComboBar.lua
 PowerBar.lua

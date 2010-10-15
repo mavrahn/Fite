@@ -2,20 +2,19 @@
 FiteComboBar = {}
 
 FiteComboBar.unusedFrames = {}
-FiteComboBar.frameNum = 0
 
 function FiteComboBar:GetFrame(parentFrame)
     local frame = nil
-    if #FiteComboBar.unusedFrames > 0 and false then
+    if #FiteComboBar.unusedFrames > 0 then
         frame = FiteComboBar.unusedFrames[#FiteComboBar.unusedFrames]
         table.remove(FiteComboBar.unusedFrames)
+		frame:SetParent(parentFrame)
         frame:Show()
     else
-        FiteComboBar.frameNum = FiteComboBar.frameNum + 1
-        frame = CreateFrame("Frame", "fitecombo" .. FiteComboBar.frameNum, parentFrame)
+        frame = CreateFrame("Frame", nil, parentFrame)
         frame:SetWidth(140)
         frame:SetHeight(32)
-        frame.texture = frame:CreateTexture("fitecombobackground" .. FiteComboBar.frameNum)
+        frame.texture = frame:CreateTexture()
         frame.texture:SetWidth(140)
         frame.texture:SetHeight(32)
         frame.texture:SetTexture[[Interface\Addons\Fite\NCBBackground]]
@@ -32,8 +31,7 @@ function FiteComboBar:GetFrame(parentFrame)
             if i == 5 then offsetX = 27 end
             local offsetY = 0
             
-            local name = "fitecombopoint" .. i .. "-" .. FiteComboBar.frameNum
-            local f = CreateFrame("Frame", name, frame)
+            local f = CreateFrame("Frame", nil, frame)
             f:SetWidth(size)
             f:SetHeight(size)
             --f:SetBackdrop({bgFile="Interface\\Addons\\Fite\\NCBPoint"})
@@ -47,7 +45,7 @@ function FiteComboBar:GetFrame(parentFrame)
             --f:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
             last = f
             
-            local h = f:CreateTexture("fitecombolight" .. FiteComboBar.frameNum .. "-" .. i, "ARTWORK")
+            local h = f:CreateTexture()
             h:SetTexture[[Interface\Addons\Fite\NCBPoint]]
         
             h:SetWidth(size-1)

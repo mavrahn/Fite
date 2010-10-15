@@ -12,7 +12,7 @@ function FiteResourceBar:New(parentFrame)
 end
 
 function FiteResourceBar:Init()
-    self.frame = CreateFrame("Frame", "fiteresourceframe", Fite.frame)
+    self.frame = CreateFrame("Frame", nil, Fite.frame)
     
     self.bar = CreateFrame("StatusBar", "fiteresourcebar", self.frame)
     self.bar:SetStatusBarTexture(M:Fetch("statusbar", "Blizzard"))
