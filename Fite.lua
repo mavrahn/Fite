@@ -1,10 +1,5 @@
 local class = select(2, UnitClass('player'))
 
-if (class ~= "DRUID" and class ~= "WARLOCK") then
-    DisableAddOn("Fite")
-    return
-end
-
 local M = LibStub:GetLibrary("LibSharedMedia-3.0")
 Fite = LibStub("AceAddon-3.0"):NewAddon("Fite", "AceConsole-3.0", "AceEvent-3.0")
 Fite.M = M
@@ -21,8 +16,6 @@ Fite.settings = {
 
 -- Startup
 function Fite:OnInitialize()
-	print("I got here at least.")
-
     Fite.currentForm = GetShapeshiftForm()
 
     Fite:MakeFrame()
@@ -87,13 +80,25 @@ function Fite:BuildSecondaryResourceBar()
     end
     Fite.secondaryResourceBar = nil
 
-    if Fite.currentForm == 3 then
-        Fite.secondaryResourceBar = FiteComboBar:New(Fite.frame)
+    if class == 'DRUID' then
+    	if Fite.currentForm == 3 then
+	        Fite.secondaryResourceBar = FiteComboBar:New(Fite.frame)
+	    elseif Fite.currentForm == 5 then
+    		Fite.secondaryResourceBar = FitePowerBar:New(Fite.frame, EclipseBarFrame, 0.9)
+    	end
+    elseif class == 'ROGUE' then
+    	Fite.secondaryResourceBar = FiteComboBar:New(Fite.frame)
+    elseif class == 'PALADIN' then
+    	Fite.secondaryResourceBar = FitePowerBar:New(Fite.frame, PaladinPowerBar, 0.9)
+    elseif class == 'DEATHKNIGHT' then
+    	Fite.secondaryResourceBar = FitePowerBar:New(Fite.frame, RuneFrame, 1.0)
+    elseif class == 'WARLOCK' then
+    	Fite.secondaryResourceBar = FitePowerBar:New(Fite.frame, ShardBarFrame, 1.0)
     end
 end
 
 function Fite:Resize()
-    Fite.width = math.max(100, (Fite.numIcons * (Fite.settings.iconSize + 2)) - 2)
+    Fite.width = math.max(150, (Fite.numIcons * (Fite.settings.iconSize + 2)) - 2)
     Fite.width = Fite.width + (Fite.settings.edgeSize)  
 
     local iconHeight
@@ -118,7 +123,7 @@ function Fite:Resize()
         
         Fite.secondaryResourceBar.frame:SetPoint("BOTTOM", Fite.frame, "BOTTOM", 0, Fite.settings.edgeSize)
     end
-   
+    
     Fite.frame:SetHeight(Fite.height)
     Fite.frame:SetWidth(Fite.width)
    
@@ -128,7 +133,7 @@ function Fite:Resize()
 end
 
 function Fite:MakeFrame() 
-    Fite.frame = CreateFrame("Frame", nil, UIParent)
+    Fite.frame = CreateFrame("Frame", "FiteFrame", UIParent)
 
     Fite:BuildIconBar()
     Fite.resourceBar = FiteResourceBar:New(Fite.frame)    
@@ -172,6 +177,10 @@ function Fite:ChooseSpells()
 		return Fite.spells.Druid[GetShapeshiftForm()]
 	elseif class == "WARLOCK" then
 		return Fite.spells.Warlock.Affliction
+	elseif class == "PALADIN" then
+		return Fite.spells.Paladin[GetPrimaryTalentTree()]
+	elseif class == "DEATHKNIGHT" then
+		return Fite.spells.DeathKnight
 	else
 		return {}
 	end
@@ -187,7 +196,6 @@ function Fite:BuildIconBar()
 	table.foreach(spells,
 			function(i, spell)
 				-- XXX - this is the best way I can find to detect spells-I-don't-know.
-				print(spell.name)
 			  	local start, duration, enabled = GetSpellCooldown(spell.name)
 				if duration ~= nil then
 					table.insert(Fite.classSpells, spell)

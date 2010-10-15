@@ -12,3 +12,4 @@ Spells.lua
 FiteIcon.lua
 ResourceBar.lua
 ComboBar.lua
+PowerBar.lua

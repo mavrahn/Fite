@@ -80,8 +80,10 @@ end
 function FiteIcon:Update()
    if self.spell.type == FITE_TYPE_BUFF then
       self:UpdateBuff()
-   else
+   elseif self.spell.type == FITE_TYPE_DEBUFF then
       self:UpdateDebuff()
+   elseif self.spell.type == FITE_TYPE_COOLDOWN then
+   	  self:UpdateInactive()
    end
 end
 
