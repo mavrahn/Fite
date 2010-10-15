@@ -1,0 +1,14 @@
+## Interface: 40100
+## Title: Fite
+## Notes: A small HUD
+## Author: Mavrahn
+## Version: 0.1
+## X-Category: Interface Enhancements
+
+embeds.xml
+
+Fite.lua
+Spells.lua
+FiteIcon.lua
+ResourceBar.lua
+ComboBar.lua
