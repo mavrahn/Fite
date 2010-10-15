@@ -42,32 +42,34 @@ function FiteIcon:New(spell, parentFrame)
 end
 
 function FiteIcon:Init()
-   self.frame = FiteIcon:GetFrame(self.parentFrame)
-   self.cooldown = self.frame.cooldown
-   self.overlay = self.frame.overlay
-   self.duration = self.frame.duration
-   self.stacks = self.frame.stacks
+	self.iconName = ''
+   	self.frame = FiteIcon:GetFrame(self.parentFrame)
+   	self.cooldown = self.frame.cooldown
+   	self.overlay = self.frame.overlay
+   	self.duration = self.frame.duration
+   	self.stacks = self.frame.stacks
 
-   self.frame:SetWidth(Fite.settings.iconSize)
-   self.frame:SetHeight(Fite.settings.iconSize)
-   self.frame:SetBackdropColor(1, 1, 1, 0.5)
+   	self.frame:SetWidth(Fite.settings.iconSize)
+   	self.frame:SetHeight(Fite.settings.iconSize)
+   	self.frame:SetBackdropColor(1, 1, 1, 0.5)
 
-   local _, _, spellIcon = GetSpellInfo(self.spell.name)
-   self.frame:SetBackdrop({ bgFile=spellIcon })
+   	local _, _, spellIcon = GetSpellInfo(self.spell.name)
+   
+	self:UpdateIcon(spellIcon)
 
-   self.cooldown:SetAllPoints(self.frame)
+   	self.cooldown:SetAllPoints(self.frame)
 
-   self.overlay:SetAllPoints(self.frame)
+   	self.overlay:SetAllPoints(self.frame)
 
-   font = GameFontNormal:GetFont()
-   self.duration:SetFont(font, floor(Fite.settings.iconSize * 0.3), "outline")
-   self.duration:SetText("")
-   self.duration:ClearAllPoints()
-   self.duration:SetPoint("TOPLEFT", self.frame, "TOPLEFT", 2, -2)
-   self.stacks:SetFont(font, floor(Fite.settings.iconSize * 0.3), "outline")
-   self.stacks:SetText("")
-   self.stacks:ClearAllPoints()
-   self.stacks:SetPoint("BOTTOMRIGHT", self.frame, "BOTTOMRIGHT", 2, 2)
+   	font = GameFontNormal:GetFont()
+   	self.duration:SetFont(font, floor(Fite.settings.iconSize * 0.3), "outline")
+   	self.duration:SetText("")
+  	self.duration:ClearAllPoints()
+	self.duration:SetPoint("TOPLEFT", self.frame, "TOPLEFT", 2, -2)
+   	self.stacks:SetFont(font, floor(Fite.settings.iconSize * 0.3), "outline")
+   	self.stacks:SetText("")
+   	self.stacks:ClearAllPoints()
+   	self.stacks:SetPoint("BOTTOMRIGHT", self.frame, "BOTTOMRIGHT", 2, 2)
 end
 
 function FiteIcon:Destroy()
@@ -145,27 +147,50 @@ function FiteIcon:UpdateBuff()
     end
 end
 
+
 function FiteIcon:GetDebuff()
+	local debuffs
 	if self.spell.debuffs then
-  		for i, debuff in ipairs(self.spell.debuffs) do
-	 		if UnitDebuff(self.spell.target, debuff) then
-				return debuff
-	 		end
-		end
-		return nil
+		debuffs = self.spell.debuffs
 	else
-		if UnitDebuff(self.spell.target, self.spell.name) then
-			return self.spell.name
+		debuffs = {self.spell.name}
+	end
+
+	for i=1,40 do
+		local name, _, _, _, _, _, _, source, _, _, _ = UnitDebuff('target', i)
+		if not name then
+			break
 		end
-	end	
+		for j, debuff in ipairs(debuffs) do
+			if name == debuff then
+				if not self.spell.mine or (source == 'player') then
+					return i
+				end
+			end
+		end
+	end
 	return nil
+end
+
+function FiteIcon:UpdateIcon(name)
+	if self.iconName == name then
+		return
+	end
+	
+   	self.frame:SetBackdrop({ bgFile=name })	
+	
+	self.iconName = name
 end
 
 function FiteIcon:UpdateDebuff()
 	local debuff = self:GetDebuff()
 	if debuff then
-    	local _,_,_,count,_,duration,expires,source,_,_,id = UnitDebuff(self.spell.target, debuff)
-      	self:UpdateActive(duration, expires, count)
+    	local name,_,icon,count,_,duration,expires,source,_,_,id = UnitDebuff(self.spell.target, debuff)
+		if self.spell.debuffIcon then
+			self:UpdateIcon(icon)
+		end
+
+  		self:UpdateActive(duration, expires, count)
    	else
     	self:UpdateInactive()
     end

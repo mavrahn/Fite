@@ -1,4 +1,6 @@
-if select(2, UnitClass('player')) ~= "DRUID" then
+local class = select(2, UnitClass('player'))
+
+if (class ~= "DRUID" and class ~= "WARLOCK") then
     DisableAddOn("Fite")
     return
 end
@@ -19,6 +21,8 @@ Fite.settings = {
 
 -- Startup
 function Fite:OnInitialize()
+	print("I got here at least.")
+
     Fite.currentForm = GetShapeshiftForm()
 
     Fite:MakeFrame()
@@ -27,6 +31,7 @@ function Fite:OnInitialize()
     Fite:RegisterEvent("UPDATE_SHAPESHIFT_FORM")
     Fite:RegisterEvent("UNIT_COMBO_POINTS")
     Fite:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+    Fite:RegisterEvent("PLAYER_TARGET_CHANGED")
 end
 
 function Fite:Rebuild()
@@ -60,11 +65,16 @@ function Fite:UNIT_SPELLCAST_SUCCEEDED(event, target, spell)
 	end
 end
 
+function Fite:PLAYER_TARGET_CHANGED()
+	if Fite.secondaryResourceBar then
+		Fite.secondaryResourceBar:Update()
+	end
+end
+
 function Fite:UNIT_COMBO_POINTS()
     if Fite.secondaryResourceBar then
         Fite.secondaryResourceBar:Update()
     end    
-    
 end
 
 function Fite:ACTIONBAR_UPDATE_COOLDOWN()
@@ -157,14 +167,27 @@ function Fite:MakeFrame()
     Fite.frame:SetScript("OnUpdate", function(self, elapsed) Fite:MaybeUpdate(elapsed) end)
 end
 
+function Fite:ChooseSpells()
+	if class == "DRUID" then
+		return Fite.spells.Druid[GetShapeshiftForm()]
+	elseif class == "WARLOCK" then
+		return Fite.spells.Warlock.Affliction
+	else
+		return {}
+	end
+end
+
 function Fite:BuildIconBar()
 	Fite:DestroyIcons()
 
 	Fite.classSpells = {}
 	
-	table.foreach(Fite.spells.Druid[GetShapeshiftForm()],
+	local spells = Fite:ChooseSpells()
+	
+	table.foreach(spells,
 			function(i, spell)
 				-- XXX - this is the best way I can find to detect spells-I-don't-know.
+				print(spell.name)
 			  	local start, duration, enabled = GetSpellCooldown(spell.name)
 				if duration ~= nil then
 					table.insert(Fite.classSpells, spell)
@@ -221,7 +244,6 @@ function Fite:UpdateResources()
         Fite.resourceBar:Update()
     end
 end
-
 
 local lasticonupdate = 0
 function Fite:MaybeUpdateIcons(elapsed)
