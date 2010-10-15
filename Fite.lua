@@ -206,8 +206,15 @@ function Fite:LayoutIcons()
 end
 
 
-function Fite:MaybeUpdateResources()
-
+local lastresourceupdate = 0
+function Fite:MaybeUpdateResources(elapsed)
+	lastresourceupdate = lastresourceupdate + elapsed
+	if lastresourceupdate < 0.1 then
+		return
+	end
+	lastresourceupdate = 0
+	
+	Fite:UpdateResources()
 end
 function Fite:UpdateResources()
     if Fite.resourceBar then
@@ -215,6 +222,17 @@ function Fite:UpdateResources()
     end
 end
 
+
+local lasticonupdate = 0
+function Fite:MaybeUpdateIcons(elapsed)
+   lasticonupdate = lasticonupdate + elapsed
+   if lasticonupdate < 0.25 then
+      return
+   end
+   lasticonupdate = 0
+
+   Fite:UpdateIcons()
+end
 function Fite:UpdateIcons()
     table.foreach(Fite.icons,
         function(i, icon)
@@ -222,19 +240,12 @@ function Fite:UpdateIcons()
         end)
 end
 
-function Fite:MaybeUpdate(elapsed)
-	Fite:MaybeUpdateIcons(elapsed)
-	FIte:MaybeUpdateResources(elapsed)
+function Fite:Update()
+	Fite:UpdateResources()
+	Fite:UpdateIcons()
 end
 
-function Fite:MaybeUpdateIcons(elapsed)
-   lastupdate = lastupdate + elapsed
-   if lastupdate < 0.1 then
-      return
-   end
-   lastupdate = 0
-   
-   
-
-   Fite:Update()
+function Fite:MaybeUpdate(elapsed)
+	Fite:MaybeUpdateIcons(elapsed)
+	Fite:MaybeUpdateResources(elapsed)
 end
