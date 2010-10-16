@@ -4,32 +4,14 @@ FiteIcon = {}
 FiteIcon.unusedFrames = {}
 FiteIcon.frameNum = 0
 
-function FiteIcon:GetFrame(parentFrame)
-   local frame = nil
-   if #FiteIcon.unusedFrames > 0 and false then
-      frame = FiteIcon.unusedFrames[#FiteIcon.unusedFrames]
-      table.remove(FiteIcon.unusedFrames)
-      frame:Show()
-      frame.cooldown:Show()
-      frame.overlay:Show()
-   else
-      FiteIcon.frameNum = FiteIcon.frameNum + 1
-      frame = CreateFrame("Frame", "fitespell" .. FiteIcon.frameNum, parentFrame)
-      frame.cooldown = CreateFrame("Cooldown", 'fitecooldown' .. FiteIcon.frameNum, self.frame)
-      frame.overlay = CreateFrame("Frame", 'fiteoverlay' .. FiteIcon.frameNum, self.frame)
-      frame.duration = frame.overlay:CreateFontString(nil,"OVERLAY")
-      frame.stacks = frame.overlay:CreateFontString(nil, "OVERLAY")
-   end
-   return frame
-end
-
-function FiteIcon:ReleaseFrame(frame)
-   frame:Hide()
-   frame.cooldown:Hide()
-   frame.overlay:Hide()
-
-   table.insert(FiteIcon.unusedFrames, frame)
-end
+FiteIconFrameCache = FiteFrameCache:New(function(parent)
+	frame = CreateFrame("Frame", nil, parent)
+    frame.cooldown = CreateFrame("Cooldown", nil, frame)
+    frame.overlay = CreateFrame("Frame", nil, frame)
+    frame.duration = frame.overlay:CreateFontString(nil,"OVERLAY")
+    frame.stacks = frame.overlay:CreateFontString(nil, "OVERLAY")
+    return frame
+end)
 
 function FiteIcon:New(spell, parentFrame)
    o = {}
@@ -43,7 +25,7 @@ end
 
 function FiteIcon:Init()
 	self.iconName = ''
-   	self.frame = FiteIcon:GetFrame(self.parentFrame)
+   	self.frame = FiteIconFrameCache:Get(self.parentFrame)
    	self.cooldown = self.frame.cooldown
    	self.overlay = self.frame.overlay
    	self.duration = self.frame.duration
@@ -73,18 +55,20 @@ function FiteIcon:Init()
 end
 
 function FiteIcon:Destroy()
-   FiteIcon:ReleaseFrame(self.frame)
+   FiteIconFrameCache:Release(self.frame)
    self.frame = nil
 end
 
 function FiteIcon:Update()
-   if self.spell.type == FITE_TYPE_BUFF then
-      self:UpdateBuff()
-   elseif self.spell.type == FITE_TYPE_DEBUFF then
-      self:UpdateDebuff()
-   elseif self.spell.type == FITE_TYPE_COOLDOWN then
-   	  self:UpdateInactive()
-   end
+    if self.spell.type == FITE_TYPE_BUFF then
+        self:UpdateBuff()
+    elseif self.spell.type == FITE_TYPE_DEBUFF then
+        self:UpdateDebuff()
+    elseif self.spell.type == FITE_TYPE_COOLDOWN then
+   	    self:UpdateInactive()
+  	elseif self.spell.type == FITE_TYPE_TOTEM then
+  		self:UpdateTotem()
+    end
 end
 
 function FiteIcon:Duration(val)
@@ -124,25 +108,40 @@ function FiteIcon:UpdateInactive()
     
     self.frame:SetAlpha(Fite.settings.inactiveAlpha)
     if duration == 0 then
+    	if self.spell.type == FITE_TYPE_COOLDOWN then
+    		self.frame:SetAlpha(1.0)
+    	end  
         self.cooldown:Hide()
         self.duration:Hide()
     else
-        self.cooldown:SetReverse(false)
+    	self.cooldown:SetReverse(false)
 
-        self.cooldown:SetCooldown(start, duration)
-        self.duration:SetText(FiteIcon:Duration(duration - (GetTime() - start)))
-        self.cooldown:Show()
-        if (duration > 1.5) then
-       		self.duration:Show()
-      	else
+    	self.cooldown:SetCooldown(start, duration)
+    	self.duration:SetText(FiteIcon:Duration(duration - (GetTime() - start)))
+    	self.cooldown:Show()
+    	if (duration > 1.5) then
+	   		self.duration:Show()
+	  	else
 			self.duration:Hide()
-      end
-   end
+		end    
+    end
+end
+
+function FiteIcon:UpdateTotem()
+	local up, name, start, duration = GetTotemInfo(self.spell.totem)
+	if start ~= 0 then
+   		self:UpdateActive(duration, start + duration, 1)	
+	else
+		self.frame:SetAlpha(Fite.settings.inactiveAlpha)
+		self.cooldown:Hide()
+		self.duration:Hide()
+	end
+	
 end
 
 function FiteIcon:UpdateBuff()
 	if UnitBuff(self.spell.target, self.spell.name) then
-       local _,_,_,count,_,duration,expires,source,_,_,id = UnitBuff(self.spell.target, self.spell.name)
+       local _,_,_,count,_,duration,expires,source,_,_,id = UnitBuff(self.spell.target, self.spell.name)       
        self:UpdateActive(duration, expires, count)
     else
        self:UpdateInactive()

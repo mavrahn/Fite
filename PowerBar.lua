@@ -1,19 +1,25 @@
 
 FitePowerBar = {}
+M = Fite.M
 
-function FitePowerBar:New(parentFrame, realFrame, scale)
-   o = {}
-   o.parentFrame = parentFrame
-   setmetatable(o, self)
-   self.__index = self
-   o:Init(realFrame, scale)
-   return o
+function FitePowerBar:New(parentFrame, realFrame, scale, height)
+    o = {}
+    o.parentFrame = parentFrame
+    if not height then
+    	height = 32 
+	end
+	o.height = height
+    setmetatable(o, self)
+    self.__index = self
+    o:Init(realFrame, scale)
+    return o
 end
 
 function FitePowerBar:Init(realFrame, scale)
-	self.frame = FitePowerBar:GetFrame(self.parentFrame)
+	self.frame = SimpleFrameCache:Get(self.parentFrame)
+	self.frame:SetScale(1.0)
 	self.frame:SetWidth(140)
-    self.frame:SetHeight(32)
+    self.frame:SetHeight(self.height)
 	
    	self.frame.unit = 'player'
    	self.realFrame = realFrame
@@ -31,7 +37,6 @@ function FitePowerBar:Init(realFrame, scale)
    	realFrame:SetParent(self.frame)
    	realFrame:ClearAllPoints()
    	realFrame:SetPoint("CENTER", self.frame, "CENTER", 0, 0)
-   	self.height = 32
 end
 
 function FitePowerBar:Destroy()
@@ -42,7 +47,7 @@ function FitePowerBar:Destroy()
 		self.realFrame:ClearAllPoints()
 		self.realFrame:SetPoint(point[1], point[2], point[3], point[4], point[5])		
 	end
-	Fite:ReleaseFrame(self.frame)
+	SimpleFrameCache:Release(self.frame)
     self.frame = nil
 end
 

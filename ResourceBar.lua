@@ -14,11 +14,11 @@ end
 function FiteResourceBar:Init()
     self.frame = CreateFrame("Frame", nil, Fite.frame)
     
-    self.bar = CreateFrame("StatusBar", "fiteresourcebar", self.frame)
+    self.bar = CreateFrame("StatusBar", nil, self.frame)
     self.bar:SetStatusBarTexture(M:Fetch("statusbar", "Blizzard"))
     self.bar:SetPoint("TOPLEFT", self.frame, "TOPLEFT", 0, 0)
     
-    self.spark = self.bar:CreateTexture(nul, "OVERLAY")
+    self.spark = self.bar:CreateTexture(nil, "OVERLAY")
     self.spark:SetTexture("Interface\\CastingBar\\UI-CastingBar-Spark")
     self.spark:SetWidth(10)
     self.spark:SetBlendMode("ADD")

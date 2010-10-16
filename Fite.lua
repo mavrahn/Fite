@@ -46,7 +46,7 @@ function Fite:Rebuild()
 	if Fite.powerBar then
 		Fite.powerBar:Destroy()
 	end
-	Fite.powerBar = Fite.class:GetPowerBar()
+	Fite.powerBar = Fite.class:GetPowerBar(Fite.frame)
 
     Fite:Resize()
     Fite:Update()
@@ -92,7 +92,7 @@ function Fite:Resize()
     else
         iconHeight = 0
     end
-    Fite.height = iconHeight + Fite.settings.resourceHeight + (2 * Fite.settings.edgeSize)
+    Fite.height = iconHeight + Fite.settings.resourceHeight + 2 * Fite.settings.edgeSize
    
     if Fite.resourceBar then
         Fite.resourceBar:SetHeight(Fite.settings.resourceHeight)
@@ -102,11 +102,13 @@ function Fite:Resize()
     end
    
     if Fite.powerBar then
-        Fite.height = Fite.height + Fite.powerBar.height
+    	if Fite.powerBar.extendFrame then
+        	Fite.height = Fite.height + Fite.powerBar.height
+        end
         --Fite.powerBar:SetWidth(Fite.width)
         --Fite.powerBar:SetHeight(Fite.powerBar.height)
         
-        Fite.powerBar.frame:SetPoint("BOTTOM", Fite.frame, "BOTTOM", 0, Fite.settings.edgeSize)
+        Fite.powerBar.frame:SetPoint("TOP", Fite.resourceBar.frame, "BOTTOM", 0, 0)
     end
     
     Fite.frame:SetHeight(Fite.height)
@@ -160,6 +162,7 @@ end
 function Fite:BuildIconBar()
 	Fite:DestroyIcons()
 	Fite.classSpells = {}
+
 	table.foreach(Fite.class:GetSpells(),
 			function(i, spell)
 				-- XXX - this is the best way I can find to detect spells-I-don't-know.
@@ -248,22 +251,41 @@ function Fite:MaybeUpdate(elapsed)
 end
 
 -- Frame Cache
-Fite.unusedFrames = {}
-function Fite:GetFrame(parent)
-    local frame = nil
-    if #Fite.unusedFrames > 0 then
-        frame = Fite.unusedFrames[#Fite.unusedFrames]
-        table.remove(FitePowerBar.unusedFrames)
+FiteFrameCache = {}
+
+function FiteFrameCache:New(factory)
+	o = {}
+	if not factory then
+		factory = function(parent) return CreateFrame("Frame", nil, parent) end
+	end
+	o.factory = factory
+   	setmetatable(o, self)
+   	self.__index = self
+   	o:Init()
+   	return o
+end
+
+function FiteFrameCache:Init()
+	self.unusedFrames = {}
+end
+
+function FiteFrameCache:Get(parent)
+	local frame = nil
+    if #self.unusedFrames > 0 then
+        frame = self.unusedFrames[#self.unusedFrames]
+        table.remove(self.unusedFrames)
         frame:Show()
         frame:SetParent(parent)
     else
-        frame = CreateFrame("Frame", nil, parentFrame)
+        frame = self.factory(parent)
     end
-    return frame
+    return frame	
 end
 
-function Fite:ReleaseFrame(frame)
+function FiteFrameCache:Release(frame)
     frame:Hide()
 	frame:SetParent(UIParent)    
-    table.insert(Fite.unusedFrames, frame)
+    table.insert(self.unusedFrames, frame)
 end
+
+SimpleFrameCache = FiteFrameCache:New()

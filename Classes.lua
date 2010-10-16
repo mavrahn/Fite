@@ -1,6 +1,7 @@
 FITE_TYPE_BUFF = 1
 FITE_TYPE_DEBUFF = 2
 FITE_TYPE_COOLDOWN = 3
+FITE_TYPE_TOTEM = 4
 
 Fite.classes = {}
 
@@ -62,19 +63,33 @@ Fite.classes.DRUID.spells = {
    	  { name="Force of Nature", target="player", type=FITE_TYPE_COOLDOWN },
    },
    {}, -- Flight
+   {},
 }
 
+function Fite.classes.DRUID:GetEffectiveForm()
+	local form = GetShapeshiftForm()
+	if form == 0 or form == 2 or form == 4 or form > 5 then
+		local tree = GetPrimaryTalentTree()
+		if tree == 1 then
+			form = 5
+		end
+	end
+	return form		
+end
+
 function Fite.classes.DRUID:GetSpells()
-	return self.spells[GetShapeshiftForm()]
+	return self.spells[self:GetEffectiveForm()]
 end
 
 function Fite.classes.DRUID:GetPowerBar(parent)
-	local form = GetShapeshiftForm()
+	local form = self:GetEffectiveForm()
 	if form == 3 then
         return FiteComboBar:New(parent)
     elseif form == 5 then
-		return FitePowerBar:New(parent, EclipseBarFrame, 0.9)
+		local frame = FitePowerBar:New(parent, EclipseBarFrame, 1.0, 50)
+		return frame
 	end
+	return nil
 end
 
 ----------------------------------------------------------------------------------------
@@ -106,20 +121,49 @@ end
 
 ----------------------------------------------------------------------------------------
 -- Rogue
-Fite.classes.ROGUE = {}
-Fite.classes.ROGUE.spells = {
+
+local Rogue = {}
+Rogue.spells = {
 	[0] = {}, -- Untalented
 	{}, -- Assassination
 	{}, -- Combat
 	{}, -- Subtlety
 }
-function Fite.classes.ROGUE:GetSpells()
+function Rogue:GetSpells()
 	return self.spells[GetPrimaryTalentTree()]
 end
 
-function Fite.classes.ROGUE:GetPowerBar(parent)
+function Rogue:GetPowerBar(parent)
 	return FiteComboBar:New(parent)
 end
+Fite.classes.ROGUE = Rogue
+
+----------------------------------------------------------------------------------------
+-- Shaman
+
+local Shaman = {}
+Shaman.spells = {
+	[0] = {}, -- Untalented
+	{}, -- Elemental
+	{ -- Enhancement
+		{ name="Flame Shock", target="target", type=FITE_TYPE_DEBUFF, mine=true },
+		{ name="Earth Shock", type=FITE_TYPE_COOLDOWN, mine=true },
+		{ name="Stormstrike", type=FITE_TYPE_COOLDOWN },
+		{ name="Lava Lash", type=FITE_TYPE_COOLDOWN },
+		{ name="Searing Totem", type=FITE_TYPE_TOTEM, totem=1 },
+		{ name="Shamanistic Rage", type=FITE_TYPE_COOLDOWN },
+	}, 
+	{}, -- Restoration
+}
+
+function Shaman:GetSpells()
+	return self.spells[GetPrimaryTalentTree()]
+end
+
+function Shaman:GetPowerBar(parent)
+	return nil
+end
+Fite.classes.SHAMAN = Shaman
 
 ----------------------------------------------------------------------------------------
 -- Warlock
